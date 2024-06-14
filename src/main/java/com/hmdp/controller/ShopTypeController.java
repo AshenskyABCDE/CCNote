@@ -24,11 +24,13 @@ import java.util.List;
 public class ShopTypeController {
     @Resource
     private IShopTypeService typeService;
-
+//    public Result queryTypeList() {
+//        List<ShopType> typeList = typeService
+//                .query().orderByAsc("sort").list();
+//        return Result.ok(typeList);
+//    }
     @GetMapping("list")
-    public Result queryTypeList() {
-        List<ShopType> typeList = typeService
-                .query().orderByAsc("sort").list();
-        return Result.ok(typeList);
+    public Result quetyTypeList() {
+        return typeService.queryTypeLists();
     }
 }
