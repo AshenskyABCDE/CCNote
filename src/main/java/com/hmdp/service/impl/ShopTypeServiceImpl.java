@@ -31,7 +31,8 @@ public class ShopTypeServiceImpl extends ServiceImpl<ShopTypeMapper, ShopType> i
         String ShopTypeList = stringRedisTemplate.opsForValue().get("shopTypeList");
         if (StrUtil.isNotBlank(ShopTypeList)) {
             List<ShopType> shopTypes = JSONUtil.toList(ShopTypeList, ShopType.class);
-            return Result.ok(ShopTypeList);
+            // bug处
+            return Result.ok(shopTypes);
         }
         // 如果没有 则访问数据库
         List<ShopType> shopTypes = query().orderByAsc("sort").list();
