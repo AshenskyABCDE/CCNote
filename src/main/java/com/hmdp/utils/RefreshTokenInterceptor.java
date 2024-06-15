@@ -14,7 +14,7 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 public class RefreshTokenInterceptor implements HandlerInterceptor {
-    private StringRedisTemplate stringRedisTemplate;
+    private final StringRedisTemplate stringRedisTemplate;
 
     public RefreshTokenInterceptor(StringRedisTemplate stringRedisTemplate) {
         this.stringRedisTemplate = stringRedisTemplate;
@@ -26,6 +26,7 @@ public class RefreshTokenInterceptor implements HandlerInterceptor {
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
         // 获取token
         String token = request.getHeader("authorization");
+        System.out.println(token);
         if (StrUtil.isBlank(token)) {
             return true;
         }

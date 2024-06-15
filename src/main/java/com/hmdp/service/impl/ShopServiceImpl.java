@@ -50,14 +50,14 @@ public class ShopServiceImpl extends ServiceImpl<ShopMapper, Shop> implements IS
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public Result update(Shop shop) {
         // 更新数据库
-        updateById(shop);
         Long id = shop.getId();
         if (id == null) {
             return Result.fail("id不要输入空");
         }
+        updateById(shop);
         // 删除缓存
         stringRedisTemplate.delete(CACHE_SHOP_KEY + shop.getId());
         return Result.ok();
