@@ -29,7 +29,6 @@ public class LoginInterceptor implements HandlerInterceptor {
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
         // 是否需要求拦截 ThreadPool是否有改用户
         if (UserHolder.getUser() == null) {
-            System.out.println("have some messages ? ");
             response.setStatus(401);
             return false;
         }

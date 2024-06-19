@@ -255,3 +255,83 @@
 之后再判断库存是否足够，否则无法下单。
 
 具体代码实现就是根据Iservice 通过优惠券Id来获取优惠券的信息，之后通过判断库存和时间来判断是否可以进行抢购。
+
+#### 并发多线程的问题
+
+使用jmeter用200个线程进行模拟，发现库存减为负数，这是因为当一个线程在即将更改的时候，另外一个线程正在判断，从而发生误判，解决方法应该上锁。
+
+我们可以用乐观锁的思想，对其增加版本号
+
+```
+查询时 版本号为1
+修改时 版本号仍然为1 说明之前没有被修改过
+如果版本号是2 说明进行了修改
+```
+
+当然可以只对stock的数值进行判断 之前有没有被修改过，这就是CAS法，其思路和版本号差不多。
+
+最初修改是在判断这里判断stock是否和之前一样
+
+```java
+boolean state = seckillVoucherService.update()
+        .setSql("stock = stock - 1") // set stock = stock - 1
+        .eq("voucher_id",voucherId).eq("stock", voucher.getStock()) // where id = ? and stock = ?
+        .update();
+```
+
+这样安全性大大提高，但是抢购的数量也就大大减小，这是因为很多用户的情况下 前后的数量发生了修改
+
+思考后，stock只要>0就可以去进行减少，不一定非得要前后相同，因此进行了优化
+
+```java
+        boolean state = seckillVoucherService.update()
+                .setSql("stock = stock - 1") // set stock = stock - 1
+                .eq("voucher_id",voucherId).gt("stock", 0) // where id = ? and stock > 0
+                .update();
+```
+
+
+
+此外我们要实现一人一单，应该基于userId来判断，具体可以判断数据库里面当前用户的数量。
+
+```java
+    public  Result createVoucherOrder(Long voucherId) {
+        // 进行一人一单的判断
+        Long userId = UserHolder.getUser().getId();
+
+            int count = query().eq("user_id", userId).eq("voucher_id", voucherId).count();
+            if (count > 0) {
+                return Result.fail("该用户已经买过一个了");
+            }
+            boolean state = seckillVoucherService.update()
+                    .setSql("stock = stock - 1") // set stock = stock - 1
+                    .eq("voucher_id", voucherId).gt("stock", 0) // where id = ? and stock > 0
+                    .update();
+            if (!state) {
+                return Result.fail("库存不足");
+            }
+            // 创建订单 优惠券Id 用户Id 购物Id
+            VoucherOrder voucherOrder = new VoucherOrder();
+            long Id = redisIdWorker.nextId("order");
+            voucherOrder.setId(Id);
+            voucherOrder.setUserId(UserHolder.getUser().getId());
+            voucherOrder.setVoucherId(voucherId);
+            save(voucherOrder);
+            // 返回订单id
+        return Result.ok(voucherId);
+    }
+```
+
+但是应当对这整个流程进行加锁，这个锁不可以放到程序里面，这样的话就会出现并发上的问题，如有些用户提交的快，这些数据没有写到数据库里。
+
+应该对这个函数进行加锁
+
+```java
+        Long userId = UserHolder.getUser().getId();
+        synchronized (userId.toString().intern()) { // 应该把这一个函数都上锁
+            // 获取代理对象
+            IVoucherOrderService proxy = (IVoucherOrderService) AopContext.currentProxy();
+            return proxy.createVoucherOrder(voucherId);
+        }
+```
+
