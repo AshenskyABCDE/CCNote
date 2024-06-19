@@ -10,7 +10,7 @@ import java.time.format.DateTimeFormatter;
 @Component
 public class RedisIdWorker {
     // 开始的时间戳
-    private  static final long BEGIN_TIMESTAMP = 1704067200L;
+    private  static final long BEGIN_TIMESTAMP = 1640995200L;
     // 序列号的位数
     private static  final int Count_BITS = 32;
     private StringRedisTemplate stringRedisTemplate;
@@ -27,7 +27,7 @@ public class RedisIdWorker {
         long timeStamp = second - BEGIN_TIMESTAMP;
 
         // 生成序列号
-        String data = now.format(DateTimeFormatter.ofPattern("yyyy:MM:dd"));
+        String data = now.format(DateTimeFormatter.ofPattern("yyyyMMdd"));
         long count = stringRedisTemplate.opsForValue().increment("icr:"+keyPrefix+":"+data);
         return timeStamp << Count_BITS | count;
     }
