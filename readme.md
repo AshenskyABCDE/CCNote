@@ -336,3 +336,56 @@ boolean state = seckillVoucherService.update()
 ```
 
 当然这里只能处理单机的并发，因为对于一台JVM有相应的锁监视器，所以遇到分布式的集群的时候，第二台JVM是认为当前没有锁的，所以可能会出现业务逻辑上的错误，这个时候我们便要实行分布式锁，也就是redis上的分布式锁。
+
+#### 基于Redis的分布式锁
+
+获取锁：
+
+采取互斥的手段，确保只能有一个线程获取锁
+
+```
+SETNX lock thread1
+EXPIRE lock 5 // 对锁加上时限，从而避免服务器宕机引起的死锁
+
+可能会遇到SET之后还没有EXPIRE 就发生宕机，因此应该在SET时就加上时限
+SET lock thread1 EX 10 NX
+```
+
+释放锁:
+
+手动释放
+
+```
+DEL KEY
+```
+
+因此对于分布式锁的业务逻辑是：
+
+上锁->如果上成功锁->释放锁
+
+如果没上成功锁->等待业务超时->释放锁
+
+
+
+总结：
+
+对于一台电脑的用户上锁，我们应该封装函数对这个整个上锁，但是由于一个JVM 锁监视器只有一个，所以进而引出我们的分布式锁去解决业务问题。
+
+```java
+        // 获取用户信息
+        Long userId = UserHolder.getUser().getId();
+        // 将其主动上分布式锁
+        SimpleRedisLock lock = new SimpleRedisLock("order:" + userId, stringRedisTemplate);
+
+        boolean islock = lock.tryLock(1200);
+        if(islock) {
+           return Result.fail("一个人只允许下一单");
+        }
+        try {
+            IVoucherOrderService proxy = (IVoucherOrderService) AopContext.currentProxy();
+            return proxy.createVoucherOrder(voucherId);
+        } finally {
+            lock.unlock();
+        }
+```
+

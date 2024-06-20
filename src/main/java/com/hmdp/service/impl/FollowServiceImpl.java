@@ -11,8 +11,8 @@ import org.springframework.stereotype.Service;
  *  服务实现类
  * </p>
  *
- * @author 虎哥
- * @since 2021-12-22
+ * @author ashensky
+ * @since 2024-6-20
  */
 @Service
 public class FollowServiceImpl extends ServiceImpl<FollowMapper, Follow> implements IFollowService {

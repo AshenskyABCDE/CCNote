@@ -31,8 +31,8 @@ import static com.hmdp.utils.RedisConstants.LOGIN_USER_KEY;
  * 服务实现类
  * </p>
  *
- * @author 虎哥
- * @since 2021-12-22
+ * @author ashensky
+ * @since 2024-6-20
  */
 @Service
 public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IUserService {
