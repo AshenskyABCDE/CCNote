@@ -435,6 +435,53 @@ return 0
 
 释放锁的时候要保证线程的标识和自己是否一致，一致则删除锁。
 
+
+
+#### Redisson
+
+首先要有一个配置类
+
+```java
+@Configuration
+public class RedissonConfig {
+    @Bean
+    public RedissonClient redissonClient() {
+        Config config = new Config();
+        config.useSingleServer().setAddress("redis://192.168.245.129:6379").setPassword("123456");
+        return Redisson.create(config);
+    }
+}
+```
+
+
+
+之后就可以用redisson进行分布式锁
+
+```java
+         RLock lock = redissonClient.getLock("lock:order:" + voucherId + userId);
+        boolean islock = lock.tryLock();
+        if(!islock) {
+           return Result.fail("一个人只允许下一单");
+        }
+        try {
+            IVoucherOrderService proxy = (IVoucherOrderService) AopContext.currentProxy();
+            return proxy.createVoucherOrder(voucherId);
+        } finally {
+            if (lock.isLocked()) {
+                lock.unlock();
+            }
+        }
+```
+
+##### 不可重复读的问题
+
+如果一个线程里A函数调用B函数，而AB函数均要上锁，那么就会拒绝上锁。这个用到juc的思想ReentrantReadWriteLock。![006](D:\智林笔记\images\006.png)
+
+其原理就是增加一个锁计数，每次调用的时候判断是不是当前标识和自己一样（同一个线程），如果是同一个线程，在函数开始的时候锁计数加1，在函数结束的时候锁计数-1。
+
 #### 注意
 
 我们对一个用户上锁的时候，key应该只和id有关，value可以用uuid，如果key加上uuid那么就会对一个用户上锁无效。
+
+
+
