@@ -402,3 +402,35 @@ DEL KEY
 解决方法就是判断当前redis是否和要解决的线程是否一致
 
 也可能出现原子性的问题：比如说当我们遇到垃圾回收导致业务超时的时候可能会导致锁释放，而线程事务应该是一个原子性操作，我们应该对其进行处理。
+
+对于原子性，我们可以用lua脚本来进行解决，因为lua可以在事务结束之前对其他进程进行堵塞
+
+lua脚本判断锁的标识和进程的标识是否相同
+
+```lua
+---
+--- 比较线程标识和锁的标识是否一样
+if(redis.call('get',KEYS[1]) == ARGV[1]) then
+    return redis.call('del',KEYS[1])
+end
+return 0
+```
+
+调用一行代码就不会出现原子性问题
+
+```java
+    @Override
+    public void unlock() {
+        // 用lua脚本来实现原子性
+        stringRedisTemplate.execute(UNLOCK_SCRIPT,
+                                    Collections.singletonList(KEY_PREFIX + name),
+                                            ID_PREFIX+ Thread.currentThread().getId());
+
+    }
+```
+
+
+
+#### 注意
+
+我们对一个用户上锁的时候，key应该只和id有关，value可以用uuid，如果key加上uuid那么就会对一个用户上锁无效。
