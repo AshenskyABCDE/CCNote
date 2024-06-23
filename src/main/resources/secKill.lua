@@ -14,8 +14,8 @@ local stockId = 'seckill:stock:' .. Id
 --- 订单Id
 local orderId = 'seckill:order:' .. Id
 --- 判断库存是否大于0
-local num = tonumber(redis.call('get',stockId));
-if (num <= 0 ) then
+local stock = tonumber(redis.call('get', stockId))
+if (stock and stock <= 0) then
     return 1
 end
 --- 判断用户 是否下单
