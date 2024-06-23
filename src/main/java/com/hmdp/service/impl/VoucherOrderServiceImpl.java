@@ -70,10 +70,10 @@ public class VoucherOrderServiceImpl extends ServiceImpl<VoucherOrderMapper, Vou
         // SimpleRedisLock lock = new SimpleRedisLock("order:" + userId, stringRedisTemplate);
         // redisson 上锁
         // 似乎这里有bug，如果不加优惠券的id，那么一个人只能抢一个优惠券
-         RLock lock = redissonClient.getLock("lock:order:" + voucherId + userId);
+        RLock lock = redissonClient.getLock("lock:order:" + voucherId + userId);
         boolean islock = lock.tryLock();
         if(!islock) {
-           return Result.fail("一个人只允许下一单");
+            return Result.fail("一个人只允许下一单");
         }
         try {
             IVoucherOrderService proxy = (IVoucherOrderService) AopContext.currentProxy();
@@ -89,25 +89,25 @@ public class VoucherOrderServiceImpl extends ServiceImpl<VoucherOrderMapper, Vou
         // 进行一人一单的判断
         Long userId = UserHolder.getUser().getId();
 
-            int count = query().eq("user_id", userId).eq("voucher_id", voucherId).count();
-            if (count > 0) {
-                return Result.fail("该用户已经买过一个了");
-            }
-            boolean state = seckillVoucherService.update()
-                    .setSql("stock = stock - 1") // set stock = stock - 1
-                    .eq("voucher_id", voucherId).gt("stock", 0) // where id = ? and stock > 0
-                    .update();
-            if (!state) {
-                return Result.fail("库存不足");
-            }
-            // 创建订单 优惠券Id 用户Id 购物Id
-            VoucherOrder voucherOrder = new VoucherOrder();
-            long Id = redisIdWorker.nextId("order");
-            voucherOrder.setId(Id);
-            voucherOrder.setUserId(UserHolder.getUser().getId());
-            voucherOrder.setVoucherId(voucherId);
-            save(voucherOrder);
-            // 返回订单id
+        int count = query().eq("user_id", userId).eq("voucher_id", voucherId).count();
+        if (count > 0) {
+            return Result.fail("该用户已经买过一个了");
+        }
+        boolean state = seckillVoucherService.update()
+                .setSql("stock = stock - 1") // set stock = stock - 1
+                .eq("voucher_id", voucherId).gt("stock", 0) // where id = ? and stock > 0
+                .update();
+        if (!state) {
+            return Result.fail("库存不足");
+        }
+        // 创建订单 优惠券Id 用户Id 购物Id
+        VoucherOrder voucherOrder = new VoucherOrder();
+        long Id = redisIdWorker.nextId("order");
+        voucherOrder.setId(Id);
+        voucherOrder.setUserId(UserHolder.getUser().getId());
+        voucherOrder.setVoucherId(voucherId);
+        save(voucherOrder);
+        // 返回订单id
         return Result.ok(voucherId);
     }
 }
