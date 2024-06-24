@@ -532,9 +532,12 @@ XREADGROUP GROUP g1 c1 COUNT 1 BLOCK 2000 STREAMS streams.order
 
 
 
-#### 注意
+### 3.9注意
 
 我们对一个用户上锁的时候，key应该只和id有关，value可以用uuid，如果key加上uuid那么就会对一个用户上锁无效。
 
 
 
+## 4.笔记功能
+
+### 4.1 发送文章
