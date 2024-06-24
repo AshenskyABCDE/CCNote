@@ -523,6 +523,15 @@ public class RedissonConfig {
 
 3.采用线程任务，不断读取消息队列里面的优惠券信息。
 
+```shell
+XGROUP CREATE stream.orders g1 0 MKSTREAM
+## 创建g1消费者组 MKSTREAM是如果没有则创建
+XREADGROUP GROUP g1 c1 COUNT 1 BLOCK 2000 STREAMS streams.order
+## 表示消费者c1从消费者组g1获取数量为1的元素
+```
+
+
+
 #### 注意
 
 我们对一个用户上锁的时候，key应该只和id有关，value可以用uuid，如果key加上uuid那么就会对一个用户上锁无效。
