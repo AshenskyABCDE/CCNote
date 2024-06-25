@@ -541,3 +541,60 @@ XREADGROUP GROUP g1 c1 COUNT 1 BLOCK 2000 STREAMS streams.order
 ## 4.笔记功能
 
 ### 4.1 发送文章
+
+在这里我们模拟去发送图片和文章内容，在发布的时候，将文章的标题内容保存至数据库，图片我们保存至前端，这样前端读取的时候就从本地存储中获取。
+
+### 4.2 查看文章
+
+点赞文章很好处理，只需要用sql语句进行加的操作即可，问题主要是判断一个人对一个帖子只能点一次赞，如果点过赞了 再点就是取消赞。
+
+主要实现可以用redis，无论是用集合set还是正常的String数据结构思路都是一样的
+
+SET思路
+
+```java
+    @Override
+    public  Result likeBlog(Long id) {
+        // 获取登录用户
+        Long userId = UserHolder.getUser().getId();
+        String key = "blog:liked1:" + id;
+        // 判断是否点赞过
+        Boolean isMember = stringRedisTemplate.opsForSet().isMember(key, userId.toString());
+        if(BooleanUtil.isFalse(isMember)) {
+            // update tb_blog set like = like -1 where id = "id"
+            boolean isSuccess = update().setSql("liked = liked + 1").eq("id",id).update();
+            if (isSuccess) {
+                stringRedisTemplate.opsForSet().add(key, userId.toString());
+            }
+        } else {
+            boolean isSuccess = update().setSql("liked = liked - 1").eq("id",id).update();
+            if (isSuccess) {
+                stringRedisTemplate.opsForSet().remove(key, userId.toString());
+            }
+        }
+        return Result.ok();
+    }
+```
+
+String判断的方法
+
+```java
+    @Override
+    public Result likeBlog2(Long id) {
+        Long userId = UserHolder.getUser().getId();
+        String value = stringRedisTemplate.opsForValue().get("blog:liked2:" + userId + id);
+        if(value == null || value == "remove") {
+            Boolean isSuccess = update().setSql("like = like + 1").eq("id",id).update();
+            if(isSuccess) {
+                stringRedisTemplate.opsForValue().set("blog:liked2:" + userId +id, "add");
+            }
+        } else {
+            Boolean isSuccess = update().setSql("like = like - 1").eq("id",id).update();
+            if(isSuccess) {
+                stringRedisTemplate.opsForValue().set("blog:liked2:" + userId +id, "remove");
+            }
+        }
+        return Result.ok();
+    }
+```
+

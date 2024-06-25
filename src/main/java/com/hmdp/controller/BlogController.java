@@ -10,6 +10,8 @@ import com.hmdp.service.IBlogService;
 import com.hmdp.service.IUserService;
 import com.hmdp.utils.SystemConstants;
 import com.hmdp.utils.UserHolder;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
@@ -20,13 +22,14 @@ import java.util.List;
  * 前端控制器
  * </p>
  *
- * @author 虎哥
- * @since 2021-12-22
+ * @author ashensky
+ * @since 2024-6-20
  */
 @RestController
 @RequestMapping("/blog")
 public class BlogController {
-
+    @Autowired
+    private StringRedisTemplate stringRedisTemplate;
     @Resource
     private IBlogService blogService;
 
@@ -43,10 +46,12 @@ public class BlogController {
 
     @PutMapping("/like/{id}")
     public Result likeBlog(@PathVariable("id") Long id) {
-        // 修改点赞数量
-        blogService.update()
-                .setSql("liked = liked + 1").eq("id", id).update();
-        return Result.ok();
+//        // 判断是否已经有点过赞
+//        stringRedisTemplate.opsForValue().get("blogLike:"+id);
+//        // 修改点赞数量 update tb_blog set like = like + 1 where id is "id"
+//        blogService.update()
+//                .setSql("liked = liked + 1").eq("id", id).update();
+        return blogService.likeBlog(id);
     }
 
     @GetMapping("/of/me")
