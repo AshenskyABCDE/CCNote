@@ -15,8 +15,8 @@ import java.time.LocalDateTime;
  * 秒杀优惠券表，与优惠券是一对一关系
  * </p>
  *
- * @author 虎哥
- * @since 2022-01-04
+ * @author ashensky
+ * @since 2024-6-20
  */
 @Data
 @EqualsAndHashCode(callSuper = false)
