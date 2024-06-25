@@ -1,6 +1,7 @@
 package com.hmdp.controller;
 
 
+import cn.hutool.core.bean.BeanUtil;
 import com.hmdp.dto.LoginFormDTO;
 import com.hmdp.dto.Result;
 import com.hmdp.dto.UserDTO;
@@ -67,7 +68,7 @@ public class UserController {
     public Result me(){
         // TODO 获取当前登录的用户并返回
         UserDTO user = UserHolder.getUser();
-        return Result.ok();
+        return Result.ok(user);
     }
 
     @GetMapping("/info/{id}")
@@ -82,5 +83,22 @@ public class UserController {
         info.setUpdateTime(null);
         // 返回
         return Result.ok(info);
+    }
+
+    // 根据用户id进入用户的个人资料
+    @GetMapping("/{id}")
+    public Result queryUserById(@PathVariable("id") Long userId) {
+        /*这个只能查看当前登录用户的主页，TODO 测试不通过
+        UserDTO dto = UserHolder.getUser();
+        return Result.ok(dto);*/
+        // 根据id，查询用户
+        User user = userService.getById(userId);
+        // 判断用户是否存在
+        if (user == null) {
+            return Result.fail("用户不存在");
+        }
+        UserDTO userDTO = BeanUtil.copyProperties(user, UserDTO.class);
+        // 返回
+        return Result.ok(userDTO);
     }
 }

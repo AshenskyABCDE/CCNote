@@ -22,4 +22,6 @@ public interface IBlogService extends IService<Blog> {
 
     // 直接用 redis 判断是够点赞过的方法
     Result likeBlog2(Long id);
+
+    Result queryBlogLikes(Long id);
 }

@@ -15,6 +15,7 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
+import javax.websocket.server.PathParam;
 import java.util.List;
 
 /**
@@ -74,5 +75,25 @@ public class BlogController {
     @GetMapping("/{id}")
     public Result queryBlogById(@PathVariable("id") Long id) {
         return blogService.queryBlogByid(id);
+    }
+    @GetMapping("/likes/{id}")
+    public Result queryBloglikesById(@PathVariable("id") Long id) {
+
+        return blogService.queryBlogLikes(id);
+    }
+
+    // 用户主页根据用户个人资料对其进行分页
+    @GetMapping("/of/user")
+    public Result queryBlogByUserId(
+            @RequestParam(value = "current", defaultValue = "1") Integer current,
+            @PathParam("id") Long id) {
+
+        // 根据用户查询，分页
+        Page<Blog> page = blogService.query()
+                .eq("user_id", id).page(new Page<>(current, SystemConstants.MAX_PAGE_SIZE));
+        // 获取页面数据
+        List<Blog> records = page.getRecords();
+        // 返回
+        return Result.ok(records);
     }
 }

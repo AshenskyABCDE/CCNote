@@ -598,3 +598,44 @@ String判断的方法
     }
 ```
 
+### 4.3 点赞排行榜
+
+由于设置排行榜的功能，改用zset类型进行存储。
+
+### 4.4 好友关注
+
+这里比较好处理，简单就是点击关注的时候会将你的user_id和关注的user_id放到数据库里，而按钮是否关注和没有关注是放到前端里去进行的，在之后版块讲解前端代码会提到。
+
+#### 共同关注
+
+在接口时创建方法
+
+```java
+    @GetMapping("/common/{id}")
+    public  Result followCommons(@PathVariable("id") Long id) {
+        return followService.followCommons(id);
+    }
+```
+
+在这个方法里实现，只需要返回两个set的交集即可，这里从Set转到List的映射很精髓。
+
+```java
+    @Override
+    public  Result followCommons(Long id) {
+        Long userId = UserHolder.getUser().getId();
+        String key = "follows:" + userId;
+        String key1 = "follows:" + id;
+        Set<String> intersect = stringRedisTemplate.opsForSet().intersect(key, key1);
+        System.out.println(intersect);
+        if(intersect == null || intersect.isEmpty()) {
+            return Result.ok(Collections.emptyList());
+        }
+        List<Long> ids = intersect.stream().map(Long::valueOf).collect(Collectors.toList());
+        List<UserDTO> users = userService.listByIds(ids)
+                .stream()
+                .map(user-> BeanUtil.copyProperties(user, UserDTO.class))
+                .collect(Collectors.toList());
+        return Result.ok(users);
+    }
+```
+
