@@ -13,12 +13,15 @@ import com.hmdp.mapper.UserMapper;
 import com.hmdp.service.IUserService;
 import com.hmdp.utils.RegexPatterns;
 import com.hmdp.utils.RegexUtils;
+import com.hmdp.utils.UserHolder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpSession;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -89,6 +92,22 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
         //设置token有效期
         stringRedisTemplate.expire(LOGIN_USER_KEY,30,TimeUnit.MINUTES);
         return Result.ok(token);
+    }
+
+    @Override
+    public Result sign() {
+        // 获取当前登录用户
+        Long userId = UserHolder.getUser().getId();
+        // 获取日期
+        LocalDateTime now = LocalDateTime.now();
+        // 拼接key
+        String keySuf = now.format(DateTimeFormatter.ofPattern(":yyyyMM"));
+        String key = "sign:" + userId + keySuf;
+        // 今天是本月的第几天
+        int day = now.getDayOfMonth();
+        // 写入redis SETBIT key offset
+        stringRedisTemplate.opsForValue().setBit(key, day - 1, true);
+        return Result.ok();
     }
 
     private User createUserWithPhone(String phone) {

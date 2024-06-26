@@ -727,3 +727,33 @@ GEODIST g1 A B
     }
 ```
 
+#### 4.6 用户签到
+
+如果要用mysql建表的话，这个数据是很大的，一个人签到10次，一百万人就是签到一千万次。我们可以通过二进制的思想，在一个月中某天签到就对应是二进制的某位上为1，可以用bitmap实现。
+
+```
+setbit
+bitcount
+
+```
+
+记录当前的日期然后存到bitmap里
+
+```java
+    @Override
+    public Result sign() {
+        // 获取当前登录用户
+        Long userId = UserHolder.getUser().getId();
+        // 获取日期
+        LocalDateTime now = LocalDateTime.now();
+        // 拼接key
+        String keySuf = now.format(DateTimeFormatter.ofPattern(":yyyyMM"));
+        String key = "sign:" + userId + keySuf;
+        // 今天是本月的第几天
+        int day = now.getDayOfMonth();
+        // 写入redis SETBIT key offset
+        stringRedisTemplate.opsForValue().setBit(key, day - 1, true);
+        return Result.ok();
+    }
+```
+
