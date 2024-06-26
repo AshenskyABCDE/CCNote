@@ -4,9 +4,15 @@
 
 本项目通过学习黑马程序员redis的讲解来实现，并举一反三实现而成，列入我在原本的功能上加入了帖子回复和分页查询回复的功能，这是原来没有的。此外还有自己运用对redis的理解 对帖子评论加上redis分布式锁来实现判断是否有过回复，从而在高并发的情况下大大减轻对数据库造成的压力。
 
-![010](.\images\010.png)
+![Description](https://raw.githubusercontent.com/AshenskyABCDE/CCNote/main/images/010.png)
 
-![011](.\images\011.png)
+如图 前端发送后 通过后端处理存到数据库
+
+<img src="https://github.com/AshenskyABCDE/CCNote/blob/main/images/011.png?raw=true">
+
+通过后端对数据库进行分页处理
+
+
 
 为了不占用过多篇幅，我将在下面的实现逻辑说我编写项目的历程。
 
