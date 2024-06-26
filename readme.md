@@ -757,3 +757,60 @@ bitcount
     }
 ```
 
+查询连续签到
+
+补签
+
+```shell
+setbit key days 1
+```
+
+获取某一天的签到情况
+
+```
+BITFIELD key GET u<day> 0
+```
+
+获取连续签到情况
+
+将二进制转为十进制，然后判断末尾有连续多少的天数
+
+```java
+    @Override
+    public  Result signCount() {
+        // 获取当前登录用户
+        Long userId = UserHolder.getUser().getId();
+        // 获取日期
+        LocalDateTime now = LocalDateTime.now();
+        // 拼接key
+        String keySuf = now.format(DateTimeFormatter.ofPattern(":yyyyMM"));
+        String key = "sign:" + userId + keySuf;
+        // 今天是本月的第几天
+        int day = now.getDayOfMonth();
+        // 获取本月截止今天为止的签到记录
+        List<Long> result = stringRedisTemplate.opsForValue().bitField(
+                key, BitFieldSubCommands.create().get(BitFieldSubCommands.BitFieldType.unsigned(day)).valueAt(0)
+        );
+
+        if(result == null || result.isEmpty()) {
+            return Result.ok(0);
+        }
+        Long num = result.get(0);
+        if(num == null || num == 0) {
+            return Result.ok(0);
+        }
+        System.out.println(key);
+        int count = 0;
+        while (true) {
+            if((num & 1) == 0) {
+                // 未签到
+                break;
+            } else {
+                count ++;
+            }
+            num = num >> 1;
+        }
+        return Result.ok(count);
+    }
+```
+

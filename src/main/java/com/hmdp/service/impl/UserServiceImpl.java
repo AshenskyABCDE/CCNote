@@ -15,6 +15,7 @@ import com.hmdp.utils.RegexPatterns;
 import com.hmdp.utils.RegexUtils;
 import com.hmdp.utils.UserHolder;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.connection.BitFieldSubCommands;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
@@ -23,6 +24,7 @@ import javax.servlet.http.HttpSession;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.function.ObjDoubleConsumer;
@@ -108,6 +110,43 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
         // 写入redis SETBIT key offset
         stringRedisTemplate.opsForValue().setBit(key, day - 1, true);
         return Result.ok();
+    }
+
+    @Override
+    public  Result signCount() {
+        // 获取当前登录用户
+        Long userId = UserHolder.getUser().getId();
+        // 获取日期
+        LocalDateTime now = LocalDateTime.now();
+        // 拼接key
+        String keySuf = now.format(DateTimeFormatter.ofPattern(":yyyyMM"));
+        String key = "sign:" + userId + keySuf;
+        // 今天是本月的第几天
+        int day = now.getDayOfMonth();
+        // 获取本月截止今天为止的签到记录
+        List<Long> result = stringRedisTemplate.opsForValue().bitField(
+                key, BitFieldSubCommands.create().get(BitFieldSubCommands.BitFieldType.unsigned(day)).valueAt(0)
+        );
+
+        if(result == null || result.isEmpty()) {
+            return Result.ok(0);
+        }
+        Long num = result.get(0);
+        if(num == null || num == 0) {
+            return Result.ok(0);
+        }
+        System.out.println(key);
+        int count = 0;
+        while (true) {
+            if((num & 1) == 0) {
+                // 未签到
+                break;
+            } else {
+                count ++;
+            }
+            num = num >> 1;
+        }
+        return Result.ok(count);
     }
 
     private User createUserWithPhone(String phone) {
